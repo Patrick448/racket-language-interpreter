@@ -1,0 +1,1 @@
+("8.6" ta6le ("68e858ecc3a3ee74d9a1324e5b82d6fbd836a30f" . "a3d1780c69c5528ace4cc668d66554a8fc187d28") (collects #"dcc019" #"checked" #"lang" #"reader.rkt") (collects #"racket" #"main.rkt") (collects #"racket" #"runtime-config.rkt"))
