@@ -1,0 +1,1 @@
+("8.6" ta6le ("a85a7928ff646f379496c43bfa9e404120bc0973" . "8c8de3fb91e6dfdf869cff14ec2c3dd2da87c8d8") (collects #"dcc019" #"classes" #"interpreter.rkt") (collects #"dcc019" #"classes" #"parser.rkt") (collects #"racket" #"main.rkt") (collects #"racket" #"runtime-config.rkt"))
