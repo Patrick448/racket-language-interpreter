@@ -1,1 +1,0 @@
-("8.6" ta6le ("bcb0924b6181f91f9eda0c751653bde0fda709b9" . "fb8586ed1ba24845e9cdc625673d4a58e9cc913e") (collects #"dcc019" #"eref" #"ast.rkt") (collects #"dcc019" #"eref" #"lexer.rkt") (collects #"parser-tools" #"yacc.rkt") (collects #"racket" #"main.rkt") (collects #"racket" #"runtime-config.rkt"))

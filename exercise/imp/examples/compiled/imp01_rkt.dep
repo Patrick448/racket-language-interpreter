@@ -1,1 +1,0 @@
-("8.6" ta6le ("e55356649713273eb69f9bd795360ebae6091a34" . "4683a38835c3478dc433b3aa7fcf83851bcac513") (collects #"dcc019" #"exercise" #"imp" #"lang" #"reader.rkt") (collects #"racket" #"main.rkt") (collects #"racket" #"runtime-config.rkt"))
