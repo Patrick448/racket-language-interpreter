@@ -12,7 +12,7 @@
     [(ast:int v) v]
     [(ast:bool v) v]
     [(ast:dif e1 e2) (- (value-of e1 Δ) (value-of e2 Δ))]
-    [(ast:zero? e) (zero? (value-of e Δ))]
+    [(ast:zero? e)  (zero? (value-of e Δ))]
     [(ast:not e) (not (value-of e Δ))]
     [(ast:if e1 e2 e3) (if (value-of e1 Δ) (value-of e2 Δ) (value-of e3 Δ))]
     [(ast:var v) (apply-env Δ v)] ; esta implementação só funciona para variáveis imutáveis
@@ -27,18 +27,26 @@
 ; result-of :: Stmt -> Env -> State -> State
 (define (result-of stmt Δ)
   (match stmt
-    [(ast:assign (ast:var x) e) (display "assignment unimplemented")]
-    [(ast:print e) (display (value-of e Δ))
-                   #;(display "print unimplemented")]
+    [(ast:assign (ast:var x) e) (extend-env x (value-of e Δ) Δ)]
+    [(ast:print e) (printf "PRRRIIIINTING! ~a\n" (value-of e Δ))
+                   #;(display "print unimplemented") Δ]
     [(ast:return e) (value-of e Δ)]
-    [(ast:block stmts) (display "block unimplemented")]
-    [(ast:if-stmt e s1 s2) (display "if statment unimplemented")]
-    [(ast:while e s) (display "while unimplemented")]
-    [(ast:local-decl (ast:var x) s) (display "local var declaration unimplemented")]
+    [(ast:block '()) Δ]
+    [(ast:block stmts) (result-of (ast:block (rest stmts)) (result-of (first stmts) Δ))
+    ;(result-of first-stmt Δ) (result-of rest-stmt Δ)
+    ]
+    [(ast:if-stmt e s1 s2) (if (value-of e Δ) (result-of s1 Δ) (result-of s2 Δ))]
+    [(ast:while e s) (while-loop e s Δ)]
+    [(ast:local-decl (ast:var x) s) (result-of s (extend-env x 'null Δ))]
     [(ast:send e (ast:var mth) args) (display "command send unimplemented")]
     [(ast:super (ast:var c) args) (display "command super unimplemented")]
     [e (raise-user-error "unimplemented-construction: " e)]
     ))
+
+(define (while-loop test stmt Δ)
+  ;(display test)
+  (if (value-of test Δ) (while-loop test stmt (result-of stmt Δ)) Δ)
+)
 
 (define (value-of-program prog)
   (empty-store)
