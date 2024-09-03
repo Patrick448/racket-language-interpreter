@@ -14,10 +14,10 @@ class c2 extends object
 
   method initialize (x) 1
   
-  method number(n) -(n,2)
+  method number(n) -(n,5)
 
 
 %let t1 = 0 in begin let t2 = -(t1,2) in -(t2,5) in let t4 = new c2() in 1
-let minhaVar = new c2() in 5
+let minhaVar = new c2() in send minhaVar number(3)
 
 % Result: -2
