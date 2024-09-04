@@ -1,5 +1,10 @@
 #lang dcc019/exercise/iclasses
 
+class c1 extends object
+    field i
+    method initialize() return 1
+
+
 {
     {
         print 150;

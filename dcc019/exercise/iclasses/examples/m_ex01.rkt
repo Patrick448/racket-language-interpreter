@@ -1,6 +1,7 @@
 #lang dcc019/exercise/iclasses
 
 
+
 {
     var i; {
     i=100;

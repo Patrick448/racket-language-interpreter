@@ -1,1 +1,1 @@
-("8.6" ta6le ("10aa60729f7c8fc2927a7427bd87a41ac4acf08c" . "0a2e3c2871c9809db300a75b84908e5cd04a1d24") (collects #"parser-tools" #"lex-sre.rkt") (collects #"parser-tools" #"lex.rkt") (collects #"racket" #"main.rkt") (collects #"racket" #"runtime-config.rkt"))
+("8.2" ta6le ("10aa60729f7c8fc2927a7427bd87a41ac4acf08c" . "7b732b8a5483f5fd1e6f379253f9e9b8bcc5c152") (collects #"parser-tools" #"lex-sre.rkt") (collects #"parser-tools" #"lex.rkt") (collects #"racket" #"main.rkt") (collects #"racket" #"runtime-config.rkt"))

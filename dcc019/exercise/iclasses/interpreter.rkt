@@ -6,6 +6,8 @@
 
 (provide value-of-program)
 
+(define class-data init-env)
+
 ; value-of :: Exp -> ExpVal
 (define (value-of exp Δ)
   (match exp
@@ -32,16 +34,22 @@
                    #;(display "print unimplemented") Δ]
     [(ast:return e) (value-of e Δ)]
     [(ast:block '()) Δ]
-    [(ast:block stmts) (result-of (ast:block (rest stmts)) (result-of (first stmts) Δ))
+    [(ast:block stmts)(result-of (ast:block (rest stmts)) (result-of (first stmts) Δ))
     ;(result-of first-stmt Δ) (result-of rest-stmt Δ)
     ]
     [(ast:if-stmt e s1 s2) (if (value-of e Δ) (result-of s1 Δ) (result-of s2 Δ))]
-    [(ast:while e s) (while-loop e s Δ)]
+    [(ast:while e s)  (while-loop e s Δ)]
     [(ast:local-decl (ast:var x) s) (result-of s (extend-env x 'null Δ))]
     [(ast:send e (ast:var mth) args) (display "command send unimplemented")]
     [(ast:super (ast:var c) args) (display "command super unimplemented")]
     [e (raise-user-error "unimplemented-construction: " e)]
     ))
+
+(define (create-classes decls) 
+  (display decls)
+)
+
+
 
 (define (while-loop test stmt Δ)
   ;(display test)
@@ -55,5 +63,10 @@
      (begin
        ; you must collect all the classes declared and building its respectively environment
        ; execute the prog expression in the correct environment
-       (result-of stmt init-env))]))
+       (create-classes decls)
+       (result-of stmt init-env)
+       (void)
+      )
+    ]
+  ))
 
