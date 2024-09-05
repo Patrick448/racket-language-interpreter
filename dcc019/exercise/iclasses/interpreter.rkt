@@ -1,12 +1,19 @@
 #lang racket
 
-(require dcc019/util/env
+(require dcc019/util/env3
          dcc019/util/memory
          dcc019/exercise/iclasses/ast)
 
 (provide value-of-program)
 
 (define class-data init-env)
+
+(define class-data-hash (make-hash))
+
+;(hash-set! class-data-hash 'key1 "value1")
+;(hash-set! class-data-hash 'key2 42)
+;(hash-set! class-data-hash 'key3 (make-hash (list (cons 'key4 "value4") (cons 'key5 42))))
+
 
 ; value-of :: Exp -> ExpVal
 (define (value-of exp Δ)
@@ -22,7 +29,7 @@
     [(ast:send e (ast:var mth) args) (display "send expression unimplemented")]
     [(ast:super (ast:var c) args) (display "super expression unimplemented")]
     [(ast:self) (display "self expression unimplemented")]
-    [(ast:new (ast:var c) args) (display "new expression unimplemented")]
+    [(ast:new (ast:var c) args) (create-class-instance c) ]
     [e (raise-user-error "unimplemented-construction: " e)]
     ))
 
@@ -39,15 +46,101 @@
     ]
     [(ast:if-stmt e s1 s2) (if (value-of e Δ) (result-of s1 Δ) (result-of s2 Δ))]
     [(ast:while e s)  (while-loop e s Δ)]
-    [(ast:local-decl (ast:var x) s) (result-of s (extend-env x 'null Δ))]
-    [(ast:send e (ast:var mth) args) (display "command send unimplemented")]
+    [(ast:local-decl (ast:var x) s) (result-of s Δ)]
+    [(ast:send e (ast:var mth) args) (
+      let* 
+        ( (instance-name (match e [(ast:var v) v]))
+          (class-instance (value-of e Δ))
+          (class-name (get-class-name class-instance))
+        )
+     (extend-env instance-name (exec-method (get-method class-name mth) class-instance) Δ)
+    )
+      ]
     [(ast:super (ast:var c) args) (display "command super unimplemented")]
     [e (raise-user-error "unimplemented-construction: " e)]
     ))
 
-(define (create-classes decls) 
-  (display decls)
+(define (get-method class-name method-name)
+  (hash-ref (hash-ref (hash-ref class-data-hash class-name) 'methods) method-name)
 )
+
+(define (exec-method body Δ)
+ ; (display 'bbbb)
+  (result-of body Δ)
+)
+
+(define (get-class-name class-instance)
+  (apply-env class-instance '~type)
+)
+
+(define (create-classes decls) 
+  (for-each (
+    lambda (decl)
+      (
+        match decl
+        [(ast:decl (ast:var name) (ast:var parent) fields methods) 
+
+          (hash-set! class-data-hash name (
+            make-hash (list 
+            (cons 'parent parent) 
+            (cons 'fields fields) 
+            (cons 'methods (make-methods-hash methods)))
+          ))
+          ]
+      ) 
+      (displayln #\space)
+      ) decls)
+)
+
+(define (make-methods-hash methods) (
+  make-hash (map (
+    lambda(method)(
+      match method
+      [(ast:method (ast:var name) params body) (cons name body)]
+    )
+  ) methods)
+
+))
+
+(define (create-class-instance classname)(
+ ;display-hash-table (hash-ref class-data-hash classname) 0
+ extend-env-with-fields (hash-ref (hash-ref class-data-hash classname) 'fields) (extend-env '~type classname init-env)
+))
+
+(define (extend-env-with-fields fields Δ)
+  (match fields
+    [(list (ast:var name)) (extend-env name 'null Δ)]
+    [(list f1 fr)
+    (begin 
+      (extend-env-with-fields f1 Δ)
+      (extend-env-with-fields fr Δ)
+    )]
+ )
+)
+
+
+;; Function to check if a value is a hash table
+(define (hash-table? v)
+  (hash? v))
+
+;; Recursive function to display key-value pairs (including nested hash tables)
+(define (display-hash-table ht indent)
+  ;; Display opening brace
+  (displayln (string-append (make-string indent #\space) "{"))
+  ;; Iterate over each key-value pair
+  (for-each
+    (lambda (key)
+      (let ((value (hash-ref ht key)))
+        (if (hash-table? value)
+            ;; If the value is a hash table, recurse with increased indentation
+            (begin
+              (displayln (format "~a~a: " (make-string (+ indent 2) #\space) key))
+              (display-hash-table value (+ indent 4)))
+            ;; Otherwise, just print the key and value
+            (displayln (format "~a~a: ~a" (make-string (+ indent 2) #\space) key value)))))
+    (hash-keys ht))
+  ;; Display closing brace
+  (displayln (string-append (make-string indent #\space) "}")))
 
 
 
@@ -68,5 +161,8 @@
        (void)
       )
     ]
-  ))
+  )
+  (display-hash-table class-data-hash 0)
+ 
+  )
 

@@ -1,1 +1,0 @@
-("8.2" ta6le ("f7b72a918fb47c0e53a665357177b2c53f6f963e" . "03d92ce3958dc00c696473fca40a635615a23787") (collects #"dcc019" #"exercise" #"iclasses" #"interpreter.rkt") (collects #"dcc019" #"exercise" #"iclasses" #"parser.rkt") (collects #"errortrace" #"errortrace-key.rkt") (collects #"racket" #"main.rkt") (collects #"racket" #"runtime-config.rkt"))
