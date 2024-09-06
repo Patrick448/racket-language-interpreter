@@ -1,6 +1,6 @@
 #lang racket
 
-(require dcc019/util/env3
+(require dcc019/util/env
          dcc019/util/memory
          dcc019/exercise/iclasses/ast)
 
