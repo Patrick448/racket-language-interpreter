@@ -8,22 +8,15 @@ class c1 extends object
     method seti() {i = 9999}
 
 {
-    {
-        print 150;
-        print 888;
-        print 444
-    };
+
     var k;{
         k = new c1();
-        send k seti();
-        send k printi()
-    };
-    print k;
-    {
-        print if zero?(0) then 333 else 311;
-        if zero?(1) print 111 print 777;
-        var i; {
-            i=3
+        print k;
+        var i;{
+            i=3;
+            k=i;
+            print k
         }
     }
+
 }

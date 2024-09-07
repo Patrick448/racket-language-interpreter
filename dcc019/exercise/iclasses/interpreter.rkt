@@ -1,6 +1,6 @@
 #lang racket
 
-(require dcc019/util/env
+(require dcc019/util/env3
          dcc019/util/memory
          dcc019/exercise/iclasses/ast)
 
@@ -29,7 +29,7 @@
     [(ast:send e (ast:var mth) args) (display "send expression unimplemented")]
     [(ast:super (ast:var c) args) (display "super expression unimplemented")]
     [(ast:self) (display "self expression unimplemented")]
-    [(ast:new (ast:var c) args) (create-class-instance c) ]
+    [(ast:new (ast:var c) args) (create-class-instance c args) ]
     [e (raise-user-error "unimplemented-construction: " e)]
     ))
 
@@ -46,7 +46,7 @@
     ]
     [(ast:if-stmt e s1 s2) (if (value-of e Δ) (result-of s1 Δ) (result-of s2 Δ))]
     [(ast:while e s)  (while-loop e s Δ)]
-    [(ast:local-decl (ast:var x) s) (result-of s Δ)]
+    [(ast:local-decl (ast:var x) s) (result-of s (extend-env x 'null Δ))]
     [(ast:send e (ast:var mth) args) (
       let* 
         ( (instance-name (match e [(ast:var v) v]))
@@ -60,13 +60,19 @@
     [e (raise-user-error "unimplemented-construction: " e)]
     ))
 
+
+
+
 (define (get-method class-name method-name)
   (hash-ref (hash-ref (hash-ref class-data-hash class-name) 'methods) method-name)
 )
 
-(define (exec-method body Δ)
+(define (exec-method method Δ)(
+  match method
+  [(ast:method name params body) (result-of body Δ)]
  ; (display 'bbbb)
-  (result-of body Δ)
+ ; (result-of body Δ)
+  )
 )
 
 (define (get-class-name class-instance)
@@ -96,15 +102,19 @@
   make-hash (map (
     lambda(method)(
       match method
-      [(ast:method (ast:var name) params body) (cons name body)]
+      [(ast:method (ast:var name) params body) (cons name method)]
     )
   ) methods)
 
 ))
 
-(define (create-class-instance classname)(
+(define (create-class-instance classname args)(
  ;display-hash-table (hash-ref class-data-hash classname) 0
- extend-env-with-fields (hash-ref (hash-ref class-data-hash classname) 'fields) (extend-env '~type classname init-env)
+ let (
+  [init-method (hash-ref (hash-ref (hash-ref class-data-hash classname) 'methods) "initialize")]
+  )
+  
+ (extend-env-with-fields (hash-ref (hash-ref class-data-hash classname) 'fields) (extend-env '~type classname init-env))
 ))
 
 (define (extend-env-with-fields fields Δ)
@@ -119,10 +129,6 @@
 )
 
 
-;; Function to check if a value is a hash table
-(define (hash-table? v)
-  (hash? v))
-
 ;; Recursive function to display key-value pairs (including nested hash tables)
 (define (display-hash-table ht indent)
   ;; Display opening brace
@@ -131,7 +137,7 @@
   (for-each
     (lambda (key)
       (let ((value (hash-ref ht key)))
-        (if (hash-table? value)
+        (if (hash? value)
             ;; If the value is a hash table, recurse with increased indentation
             (begin
               (displayln (format "~a~a: " (make-string (+ indent 2) #\space) key))
