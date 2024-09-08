@@ -29,7 +29,7 @@
     [(ast:send e (ast:var mth) args) (display "send expression unimplemented")]
     [(ast:super (ast:var c) args) (display "super expression unimplemented")]
     [(ast:self) (display "self expression unimplemented")]
-    [(ast:new (ast:var c) args) (create-class-instance c args) ]
+    [(ast:new (ast:var c) args) (create-class-instance c args)]
     [e (raise-user-error "unimplemented-construction: " e)]
     ))
 
@@ -56,7 +56,17 @@
      (extend-env instance-name [exec-method (get-method class-name mth) class-instance args] Δ)
     )
       ]
-    [(ast:super (ast:var c) args) (display "command super unimplemented")]
+    [(ast:super (ast:var mth) args) ( begin 
+      (displayln 'aaaaa)
+      (displayln Δ)
+      (let* (
+        [current-class-instance Δ]
+        [current-class-name (get-class-name current-class-instance)]
+        [super-class-name (hash-ref (hash-ref class-data-hash current-class-name) 'parent)]
+        [method (get-method super-class-name mth)]
+      )
+      [exec-method method Δ args])
+    )]
     [e (raise-user-error "unimplemented-construction: " e)]
     ))
 
@@ -136,17 +146,23 @@
 
 ))
 
+(define (get-super-class-name class-name)
+  (hash-ref (hash-ref class-data-hash class-name) 'parent)
+)
+
 (define (create-class-instance classname args)(
  ;display-hash-table (hash-ref class-data-hash classname) 0
  let* (
   [init-method (hash-ref (hash-ref (hash-ref class-data-hash classname) 'methods) "initialize")]
   [fields (hash-ref (hash-ref class-data-hash classname) 'fields)]
   [env-with-fields (extend-env-with-fields fields (extend-env '~type classname init-env))]
+  [env-with-super (extend-env '~self 'reference-to-memory env-with-fields)]
+  [instance env-with-super]
   )
   (begin 
 
-    (display (exec-method init-method env-with-fields args))
-    env-with-fields
+    (display (exec-method init-method instance args))
+    instance
   )
   
 ))
