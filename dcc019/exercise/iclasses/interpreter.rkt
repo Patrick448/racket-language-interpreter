@@ -53,7 +53,7 @@
           (class-instance (value-of e Δ))
           (class-name (get-class-name class-instance))
         )
-     (extend-env instance-name (exec-method (get-method class-name mth) class-instance) Δ)
+     (extend-env instance-name [exec-method (get-method class-name mth) class-instance args] Δ)
     )
       ]
     [(ast:super (ast:var c) args) (display "command super unimplemented")]
@@ -61,15 +61,43 @@
     ))
 
 
-
+(define (resolve-exps exps Δ)
+    (map (lambda (exp) (value-of exp Δ)) exps)
+)
 
 (define (get-method class-name method-name)
   (hash-ref (hash-ref (hash-ref class-data-hash class-name) 'methods) method-name)
 )
 
-(define (exec-method method Δ)(
+(define (assoc-param-args params args Δ)
+  ;zip params args in a list of (param arg) pairs
+    [foldl (lambda (assoc env)
+           (extend-env (first assoc) (second assoc) env))
+         Δ
+         (map (lambda (param arg) (list param arg)) params args)]
+  
+)
+
+
+(define (get-param-names params)
+  (map (lambda (param) (match param [(ast:var name) name])) params)
+)
+
+(define (exec-method method Δ args)(
   match method
-  [(ast:method name params body) (result-of body Δ)]
+  [(ast:method name params body)
+    (
+      let* 
+        ( 
+          (params-names (get-param-names params))
+          (params-args (resolve-exps args Δ))
+          (new-env (assoc-param-args params-names params-args Δ))
+        )
+        (
+          result-of body new-env
+        )
+    )
+  ]
  ; (display 'bbbb)
  ; (result-of body Δ)
   )
@@ -110,11 +138,17 @@
 
 (define (create-class-instance classname args)(
  ;display-hash-table (hash-ref class-data-hash classname) 0
- let (
+ let* (
   [init-method (hash-ref (hash-ref (hash-ref class-data-hash classname) 'methods) "initialize")]
+  [fields (hash-ref (hash-ref class-data-hash classname) 'fields)]
+  [env-with-fields (extend-env-with-fields fields (extend-env '~type classname init-env))]
+  )
+  (begin 
+
+    (display (exec-method init-method env-with-fields args))
+    env-with-fields
   )
   
- (extend-env-with-fields (hash-ref (hash-ref class-data-hash classname) 'fields) (extend-env '~type classname init-env))
 ))
 
 (define (extend-env-with-fields fields Δ)
