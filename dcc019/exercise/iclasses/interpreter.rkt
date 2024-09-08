@@ -319,11 +319,23 @@
 ))
 
 
+(define (get-all-fields classname)
+  (
+    let* (
+      [fields (hash-ref (hash-ref class-data-hash classname) 'fields)]
+      [superclass (get-super-class-name classname)]
+      [super-fields (if (and superclass (not (string=? "object" superclass))) (get-all-fields superclass) '())]
+    )
+    (reverse (append fields super-fields))
+  )
+)
 
 
 (define (create-class-instance2 classname args)
 (
  let* (
+    [xxx (displayln "create-class-instance2")]
+    [ xxx (displayln (get-all-fields classname))]
     [init-method (hash-ref (hash-ref (hash-ref class-data-hash classname) 'methods) "initialize" #f)]
     [fields (get-field-names (hash-ref (hash-ref class-data-hash classname) 'fields))]
     [field-refs (create-field-refs fields)]
@@ -398,4 +410,3 @@
   (display-hash-table class-data-hash 0)
  
   )
-
