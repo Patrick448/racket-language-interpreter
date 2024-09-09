@@ -23,17 +23,13 @@
     [(ast:zero? e)  (zero? (value-of e Δ))]
     [(ast:not e) (not (value-of e Δ))]
     [(ast:if e1 e2 e3) (if (value-of e1 Δ) (value-of e2 Δ) (value-of e3 Δ))]
-    [(ast:var v) 
-    
-      (match (apply-env Δ v)
+    [(ast:var v) (match (apply-env Δ v)
             [(ref v) (deref v)]
             [n n]
       )
-      
     ] 
     [(ast:let (ast:var x) e1 e2) (value-of e2 (extend-env x (value-of e1 Δ) Δ))]
     [(ast:send e (ast:var mth) args) (
-        
        let*-values 
           ( 
             ((obj-ref-ref) (value-of e Δ))   
@@ -46,7 +42,21 @@
         [exec-method2 method instance-env (resolve-exps args Δ)]
       )
     ]
-    [(ast:super (ast:var c) args) (display "super expression unimplemented")]
+    [(ast:super (ast:var c) args) ( begin 
+      (let*-values (
+       
+        ;pegar nome da superclasse
+        [(super-class-name)(apply-env Δ '~super)]
+         ;construir instancia a partir do ponteiro contido no ~self com cast para a superclasse
+        [(instance-env) (create-instance-env-cast (ref-addr (apply-env Δ '~self)) super-class-name)]
+        ;buscar método na superclasse e ver onde foi encontrado
+        [(method classfound) (get-method-rec (apply-env instance-env '~type) c)]
+        ;constuir instancia com cast para a classe onde foi encontrado
+        [(instance-env) (create-instance-env-cast (ref-addr (apply-env Δ '~self)) classfound)]
+      
+      )
+      [exec-method2 method instance-env (resolve-exps args Δ)])
+    )]
     [(ast:self) (ref-addr (apply-env Δ '~self))]
     [(ast:new (ast:var c) args) (create-class-instance2 c (resolve-exps args Δ))]
     [e (raise-user-error "unimplemented-construction: " e)]
@@ -296,7 +306,7 @@
 
 (define (create-instance-env3 obj-ref-ref)
   (let*(
-    ;[xxx (displayln "create-instance-env3")]
+
     [obj-ref (deref obj-ref-ref)]
     [classname (object-ref-class obj-ref)]
     [fields (hash-ref (hash-ref class-data-hash classname) 'fields)]
@@ -305,8 +315,6 @@
     [base-env (extend-env '~super superclass init-env)]
     [base-env (extend-env '~type classname base-env)]
     [refs (object-ref-field-refs obj-ref)]
-    ;[xxx (displayln refs)]
-    ;[xxxx (displayln field-names)]
     [instance-env (
       foldl 
         (lambda (fieldasoc env) (extend-env (first fieldasoc) (ref (second fieldasoc)) env))
@@ -363,20 +371,18 @@
 (define (create-class-instance2 classname args)
 (
  let* (
-   ; [xxx (displayln "create-class-instance2")]
-    ;[ xxx (displayln (get-all-fields classname))]
+
     [init-method (hash-ref (hash-ref (hash-ref class-data-hash classname) 'methods) "initialize" #f)]
     [fields (get-field-names (get-all-fields classname))]
     [field-refs (create-field-refs fields)]
     [obj-ref (newref (object-ref classname (map newref field-refs)))]
-   ; [xxx (displayln (map newref field-refs))]
     [instance-env (create-instance-env3 obj-ref)]
 
   )
   (begin 
 
    (when init-method (exec-method2 init-method instance-env args))
-    ;instance
+    
     obj-ref
   )
   
@@ -436,6 +442,5 @@
       )
     ]
   )
- ; (display-hash-table class-data-hash 0)
  
   )
