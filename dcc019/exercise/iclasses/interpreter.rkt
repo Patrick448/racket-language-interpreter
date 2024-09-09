@@ -14,11 +14,6 @@
 
 (struct ref (addr) #:transparent)
 
-;(hash-set! class-data-hash 'key1 "value1")
-;(hash-set! class-data-hash 'key2 42)
-;(hash-set! class-data-hash 'key3 (make-hash (list (cons 'key4 "value4") (cons 'key5 42))))
-
-
 ; value-of :: Exp -> ExpVal
 (define (value-of exp Δ)
   (match exp
@@ -34,24 +29,18 @@
             [(ref v) (deref v)]
             [n n]
       )
-      ;(deref (apply-env Δ v))
-    ] ; esta implementação só funciona para variáveis imutáveis
+      
+    ] 
     [(ast:let (ast:var x) e1 e2) (value-of e2 (extend-env x (value-of e1 Δ) Δ))]
     [(ast:send e (ast:var mth) args) (
         
        let*-values 
           ( 
-            ;[(xxx) (display "send-expr ")]
             ((obj-ref-ref) (value-of e Δ))   
             ((instance-env) (create-instance-env3 obj-ref-ref ))
             ((class-name) (get-class-name instance-env))
             ((method classfound) (get-method-rec class-name mth))
             ((instance-env) (create-instance-env-cast obj-ref-ref classfound))
-            ;display formatted expression
-            
-            ;[(xxx) (displayln mth)]
-            ;[(xxx) (displayln obj-ref-ref)]
-            ;((xxx) (displayln (create-instance-env-cast obj-ref-ref classfound)))
             
           )
         [exec-method2 method instance-env (resolve-exps args Δ)]
@@ -69,10 +58,6 @@
     [(ast:assign (ast:var x) e) (begin  (setref! (ref-addr (apply-env Δ x)) (value-of e Δ)) Δ)]
     [(ast:print e)  (printf "PRRRIIIINTING! ~a\n" (value-of e Δ)) Δ]
     [(ast:return e) (value-of e Δ)]
-    ;[(ast:block '()) init-env]
-    ;[(ast:block stmts)((result-of (ast:block (rest stmts)) (result-of (first stmts) Δ)) init-env)
-    ;(result-of first-stmt Δ) (result-of rest-stmt Δ)
-    ;]
     [(ast:block stmts)(begin 
      ( for-each (lambda (stmt) (result-of stmt Δ)) stmts)
       Δ
@@ -89,10 +74,6 @@
             ((class-name) (get-class-name instance-env))
             ((method classfound) (get-method-rec class-name mth))
             ((instance-env) (create-instance-env-cast obj-ref-ref classfound))
-            ;[(xxx) (display "send-stmt ")]
-            ;[(xxx) (displayln mth)]
-            ;[(xxx) (displayln " ")]
-            ;((xxx) (displayln (create-instance-env-cast (ref-addr (apply-env Δ '~self)) classfound)))
           )
         [exec-method2 method instance-env (resolve-exps args Δ)])
      
@@ -109,35 +90,7 @@
         [(method classfound) (get-method-rec (apply-env instance-env '~type) mth)]
         ;constuir instancia com cast para a classe onde foi encontrado
         [(instance-env) (create-instance-env-cast (ref-addr (apply-env Δ '~self)) classfound)]
-        ;
-
-
-       ; [(xxx) (displayln "super")]
-        ;constroi instancia a partir do ~self no ambiente
-       ; [(instance-env) (create-instance-env3 (ref-addr (apply-env Δ '~self)))]
-        ;[(current-class-name) (get-class-name instance-env)]
-      ;  [(super-class-name) (apply-env instance-env '~super)]
-
-        ;[(xxx) (display "created instance from ~self ")]
-       ;  [(xxx) (displayln current-class-name)]
-
-        ;constroi instancia a partir da anterior forçando o tipo a ser igual o que está no ~super da instancia anterior
-        ; [(instance-env) (create-instance-env-cast (ref-addr (apply-env Δ '~self)) super-class-name)]
-        ; [(xxx) (display "created instance from super-class-name ")]
-        ; [(xxx) (displayln super-class-name)]
-         ;[(super-class-name) (apply-env instance-env '~super)]
-        
-
-        ;busca método a partir da instancia anterior e guarda onde encontrou
-       ; [(method classfound) (get-method-rec super-class-name mth)]
-       ; [(xxx) (display "found method in class ")]
-        ; [(xxx) (displayln classfound)]
-
-        ;[(instance-env) (create-instance-env-cast (ref-addr (apply-env Δ '~self)) classfound)]
-       ; [(super-class-name) (apply-env instance-env '~super)]
-       ; [(xxx) (displayln "created instance from classfound ")]
-        
-        ;[(xxx) (displayln instance-env)]
+      
       )
       [exec-method2 method instance-env (resolve-exps args Δ)])
     )]
@@ -224,12 +177,6 @@
           (params-args args)
           
           (new-env (assoc-param-args-ref params-names params-args Δ))
-          ;(xxx (display "exec-method2 "))
-          ;(xxx (displayln name))
-          ;(xxx (displayln body))
-          ;(xxx (displayln new-env))
-          ;(xxx (displayln (result-of body new-env)))
-          ;(xxx (displayln " "))
           
         )
          (begin ;(displayln new-env)
@@ -237,8 +184,7 @@
         )
     )
   ]
- ; (display 'bbbb)
- ; (result-of body Δ)
+ 
   )
 )
 
