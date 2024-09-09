@@ -68,7 +68,7 @@
 (define (result-of stmt Δ)
   (match stmt
     [(ast:assign (ast:var x) e) (begin  (setref! (ref-addr (apply-env Δ x)) (value-of e Δ)) Δ)]
-    [(ast:print e)  (printf (value-of e Δ)) Δ]
+    [(ast:print e)  (printf "~a\n" (value-of e Δ)) Δ]
     [(ast:return e) (value-of e Δ)]
     [(ast:block stmts)(begin 
      ( for-each (lambda (stmt) (result-of stmt Δ)) stmts)
