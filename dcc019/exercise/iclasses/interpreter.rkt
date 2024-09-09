@@ -39,18 +39,26 @@
     [(ast:let (ast:var x) e1 e2) (value-of e2 (extend-env x (value-of e1 Δ) Δ))]
     [(ast:send e (ast:var mth) args) (
         
-       let* 
+       let*-values 
           ( 
-            (obj-ref-ref (value-of e Δ))   
-            (instance-env (create-instance-env3 obj-ref-ref))
-            (class-name (get-class-name instance-env))
-
+            [(xxx) (display "send-expr ")]
+            ((obj-ref-ref) (value-of e Δ))   
+            ((instance-env) (create-instance-env3 obj-ref-ref ))
+            ((class-name) (get-class-name instance-env))
+            ((method classfound) (get-method-rec class-name mth))
+            ((instance-env) (create-instance-env-cast obj-ref-ref classfound))
+            ;display formatted expression
+            
+            [(xxx) (displayln mth)]
+            [(xxx) (displayln obj-ref-ref)]
+            ((xxx) (displayln (create-instance-env-cast obj-ref-ref classfound)))
+            
           )
-        [exec-method2 (get-method-rec class-name mth) instance-env (resolve-exps args Δ)]
+        [exec-method2 method instance-env (resolve-exps args Δ)]
       )
     ]
     [(ast:super (ast:var c) args) (display "super expression unimplemented")]
-    [(ast:self) (apply-env Δ '~self)]
+    [(ast:self) (displayln "self") (displayln Δ) (ref-addr (apply-env Δ '~self))]
     [(ast:new (ast:var c) args) (create-class-instance2 c (resolve-exps args Δ))]
     [e (raise-user-error "unimplemented-construction: " e)]
     ))
@@ -59,41 +67,78 @@
 (define (result-of stmt Δ)
   (match stmt
     [(ast:assign (ast:var x) e) (begin  (setref! (ref-addr (apply-env Δ x)) (value-of e Δ)) Δ)]
-    [(ast:print e) (printf "PRRRIIIINTING! ~a\n" (value-of e Δ))
+    [(ast:print e) (displayln Δ) (printf "PRRRIIIINTING! ~a\n" (value-of e Δ))
                    #;(display "print unimplemented") Δ]
     [(ast:return e) (value-of e Δ)]
     ;[(ast:block '()) init-env]
     ;[(ast:block stmts)((result-of (ast:block (rest stmts)) (result-of (first stmts) Δ)) init-env)
     ;(result-of first-stmt Δ) (result-of rest-stmt Δ)
     ;]
-    [(ast:block stmts)(
-      begin 
-      (foldl (lambda (stmt env) (result-of stmt env)) Δ stmts)
-      init-env
+    [(ast:block stmts)(begin 
+     ( for-each (lambda (stmt) (result-of stmt Δ)) stmts)
+      Δ
     )]
     [(ast:if-stmt e s1 s2) (if (value-of e Δ) (result-of s1 Δ) (result-of s2 Δ))]
     [(ast:while e s)  (while-loop e s Δ)]
     [(ast:local-decl (ast:var x) s) (result-of s (extend-env x (ref (newref 'null)) Δ))]
     [(ast:send e (ast:var mth) args) (
         begin 
-        (displayln "send")
-        (displayln Δ)
-        (let* 
-          ( (obj-ref-ref (value-of e Δ))
-            (instance-env (create-instance-env3 obj-ref-ref))
-            (class-name (get-class-name instance-env))
-
+        (let*-values 
+          ( 
+            ((obj-ref-ref) (value-of e Δ))   
+            ((instance-env) (create-instance-env3 obj-ref-ref))
+            ((class-name) (get-class-name instance-env))
+            ((method classfound) (get-method-rec class-name mth))
+            ((instance-env) (create-instance-env-cast obj-ref-ref classfound))
+            [(xxx) (display "send-stmt ")]
+            [(xxx) (displayln mth)]
+            [(xxx) (displayln " ")]
+            ;((xxx) (displayln (create-instance-env-cast (ref-addr (apply-env Δ '~self)) classfound)))
           )
-        [exec-method2 (get-method-rec class-name mth) instance-env (resolve-exps args Δ)])
-        Δ
+        [exec-method2 method instance-env (resolve-exps args Δ)])
+     
       )
     ]
     [(ast:super (ast:var mth) args) ( begin 
-      (let* (
-        [instance-env (create-instance-env3 (ref-addr (apply-env Δ '~self)))]
-        [current-class-name (get-class-name instance-env)]
-        [super-class-name (hash-ref (hash-ref class-data-hash current-class-name) 'parent)]
-        [method (get-method-rec super-class-name mth)]
+      (let*-values (
+       
+        ;pegar nome da superclasse
+        [(super-class-name)(apply-env Δ '~super)]
+         ;construir instancia a partir do ponteiro contido no ~self com cast para a superclasse
+        [(instance-env) (create-instance-env-cast (ref-addr (apply-env Δ '~self)) super-class-name)]
+        ;buscar método na superclasse e ver onde foi encontrado
+        [(method classfound) (get-method-rec (apply-env instance-env '~type) mth)]
+        ;constuir instancia com cast para a classe onde foi encontrado
+        [(instance-env) (create-instance-env-cast (ref-addr (apply-env Δ '~self)) classfound)]
+        ;
+
+
+       ; [(xxx) (displayln "super")]
+        ;constroi instancia a partir do ~self no ambiente
+       ; [(instance-env) (create-instance-env3 (ref-addr (apply-env Δ '~self)))]
+        ;[(current-class-name) (get-class-name instance-env)]
+      ;  [(super-class-name) (apply-env instance-env '~super)]
+
+        ;[(xxx) (display "created instance from ~self ")]
+       ;  [(xxx) (displayln current-class-name)]
+
+        ;constroi instancia a partir da anterior forçando o tipo a ser igual o que está no ~super da instancia anterior
+        ; [(instance-env) (create-instance-env-cast (ref-addr (apply-env Δ '~self)) super-class-name)]
+        ; [(xxx) (display "created instance from super-class-name ")]
+        ; [(xxx) (displayln super-class-name)]
+         ;[(super-class-name) (apply-env instance-env '~super)]
+        
+
+        ;busca método a partir da instancia anterior e guarda onde encontrou
+       ; [(method classfound) (get-method-rec super-class-name mth)]
+       ; [(xxx) (display "found method in class ")]
+        ; [(xxx) (displayln classfound)]
+
+        ;[(instance-env) (create-instance-env-cast (ref-addr (apply-env Δ '~self)) classfound)]
+       ; [(super-class-name) (apply-env instance-env '~super)]
+       ; [(xxx) (displayln "created instance from classfound ")]
+        
+        ;[(xxx) (displayln instance-env)]
       )
       [exec-method2 method instance-env (resolve-exps args Δ)])
     )]
@@ -108,17 +153,19 @@
 (define (get-method-rec class-name method-name)
   ( 
     let* (
-      [class-name (hash-ref class-data-hash class-name)]
-      [super-class-name (hash-ref class-name 'parent)]
-      [method (get-method class-name method-name)]
+
+      [class-data (hash-ref class-data-hash class-name)]
+      [super-class-name (hash-ref class-data 'parent)]
+      [method (get-method class-data method-name)]
       ;[xxx( displayln method)]
     )
     (if method
-      method
+      (values method class-name)
       (get-method-rec super-class-name method-name)
     )
   )
 )
+
 
 
 (define (get-method class-name method-name)
@@ -172,10 +219,19 @@
   [(ast:method name params body)
     (
       let* 
-        ( (xxx (displayln Δ))
+        ( 
           (params-names (get-param-names params))
+          
           (params-args args)
+          
           (new-env (assoc-param-args-ref params-names params-args Δ))
+          (xxx (display "exec-method2 "))
+          (xxx (displayln name))
+          (xxx (displayln body))
+          (xxx (displayln new-env))
+          (xxx (displayln (result-of body new-env)))
+          (xxx (displayln " "))
+          
         )
          (begin ;(displayln new-env)
           (result-of body new-env)
@@ -295,15 +351,17 @@
 
 (define (create-instance-env3 obj-ref-ref)
   (let*(
+    [xxx (displayln "create-instance-env3")]
     [obj-ref (deref obj-ref-ref)]
     [classname (object-ref-class obj-ref)]
     [fields (hash-ref (hash-ref class-data-hash classname) 'fields)]
-    [field-names (get-field-names fields)]
+    [field-names (get-field-names (get-all-fields classname))]
     [superclass (get-super-class-name classname)]
     [base-env (extend-env '~super superclass init-env)]
     [base-env (extend-env '~type classname base-env)]
     [refs (object-ref-field-refs obj-ref)]
-    
+    [xxx (displayln refs)]
+    [xxxx (displayln field-names)]
     [instance-env (
       foldl 
         (lambda (fieldasoc env) (extend-env (first fieldasoc) (ref (second fieldasoc)) env))
@@ -313,7 +371,33 @@
     [instance-env (extend-env '~self (ref obj-ref-ref) instance-env)]
   )
   (begin
-    (displayln instance-env)
+   ; (displayln instance-env)
+    
+    instance-env)
+))
+
+
+(define (create-instance-env-cast obj-ref-ref type)
+  (let*(
+    [obj-ref (deref obj-ref-ref)]
+    [classname type]
+    [fields (hash-ref (hash-ref class-data-hash classname) 'fields)]
+    [field-names (get-field-names (get-all-fields classname))]
+    [superclass (get-super-class-name classname)]
+    [base-env (extend-env '~super superclass init-env)]
+    [base-env (extend-env '~type classname base-env)]
+    [refs (object-ref-field-refs obj-ref)]
+    
+    [instance-env (
+      foldl 
+        (lambda (fieldasoc env) (extend-env (first fieldasoc) (ref (second fieldasoc)) env))
+        base-env
+        (map (lambda (field ref) (list field ref)) field-names (take refs (length field-names))))
+    ]
+    [instance-env (extend-env '~self (ref obj-ref-ref) instance-env)]
+  )
+  (begin
+   ; (displayln instance-env)
     
     instance-env)
 ))
@@ -337,7 +421,7 @@
     [xxx (displayln "create-class-instance2")]
     [ xxx (displayln (get-all-fields classname))]
     [init-method (hash-ref (hash-ref (hash-ref class-data-hash classname) 'methods) "initialize" #f)]
-    [fields (get-field-names (hash-ref (hash-ref class-data-hash classname) 'fields))]
+    [fields (get-field-names (get-all-fields classname))]
     [field-refs (create-field-refs fields)]
     [obj-ref (newref (object-ref classname (map newref field-refs)))]
     [xxx (displayln (map newref field-refs))]
