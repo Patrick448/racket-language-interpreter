@@ -1,3 +1,5 @@
+;Autores: Patrick Canto de Carvalho - 201935026
+;Maria Eduarda de Medeiros Simonassi - 202365119A
 #lang racket
 
 (require dcc019/util/env3
@@ -66,7 +68,7 @@
 (define (result-of stmt Δ)
   (match stmt
     [(ast:assign (ast:var x) e) (begin  (setref! (ref-addr (apply-env Δ x)) (value-of e Δ)) Δ)]
-    [(ast:print e)  (printf "PRRRIIIINTING! ~a\n" (value-of e Δ)) Δ]
+    [(ast:print e)  (printf (value-of e Δ)) Δ]
     [(ast:return e) (value-of e Δ)]
     [(ast:block stmts)(begin 
      ( for-each (lambda (stmt) (result-of stmt Δ)) stmts)

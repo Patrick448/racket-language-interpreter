@@ -1,3 +1,5 @@
+;Autores: Patrick Canto de Carvalho - 201935026
+;Maria Eduarda de Medeiros Simonassi - 202365119A
 #lang racket
 
 (provide (all-defined-out))
